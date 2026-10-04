@@ -1,0 +1,3 @@
+- 目标 RAG_project 仅含12份报告附件，无现有应用或AGENTS约束。
+- 上游 LightRAG 在相邻目录，版本1.5.8，aquery_data返回data.chunks及chunk_id/file_path；custom KG导入需标记离线测试模式与恢复限制。
+- 本机bundled Python3.12可用，但缺少FastAPI/pytest/LightRAG；采用项目专属虚拟环境。

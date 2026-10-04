@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-03",
+  "project": "CommerceOps 0.1.0",
+  "target": "/Users/chen/Agent study/RAG_project",
+  "tests": {
+    "passed": 49,
+    "subtests_passed": 51,
+    "ruff": "passed",
+    "javascript_syntax": "passed"
+  },
+  "business_evaluation": {
+    "passed": 20,
+    "total": 20,
+    "backend": "lexical-demo",
+    "scope": "Self-authored synthetic business regression; not LLM accuracy."
+  },
+  "lightrag_sdk": {
+    "version": "1.5.8",
+    "passed": true,
+    "mode": "mix",
+    "entities": 12,
+    "relationships": 6,
+    "chunks": 6,
+    "mapped_evidence_ids": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+    ],
+    "scope": "Real SDK with deterministic test doubles; no real model endpoint or quality claim."
+  },
+  "browser_checks": [
+    "375 / 370 plan comparison",
+    "unknown customer identity and continuation",
+    "full rule evidence",
+    "feedback persistence",
+    "history restores question, cart, identity and time",
+    "20-case evaluation view",
+    "390px layout: scrollWidth equals clientWidth"
+  ],
+  "packaging": {
+    "wheel_knowledge_documents": 6
+  },
+  "upstream_git_status": "clean",
+  "remaining": [
+    "Real model endpoint configuration and end-to-end model verification",
+    "Real retrieval-quality evaluation",
+    "Real merchant integrations and production authorization"
+  ]
+}

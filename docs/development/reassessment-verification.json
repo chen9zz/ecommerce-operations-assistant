@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-03",
+  "tests_passed": 82,
+  "subtests_passed": 51,
+  "business_cases_passed": 33,
+  "business_cases_total": 33,
+  "ruff": "passed",
+  "javascript_syntax": "passed",
+  "sdk_smoke": "passed; deterministic vectors, not real model quality",
+  "browser_checks": [
+    "default identity unknown",
+    "identity conflict pauses diagnosis",
+    "confirmation as old customer produces 375.00",
+    "VIP50 explicitly unsupported",
+    "expired activity and unknown identity have no confirmation controls"
+  ]
+}

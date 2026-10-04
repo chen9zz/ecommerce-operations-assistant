@@ -1,0 +1,39 @@
+id,topic,path,line,pinned_url
+S01,版本定义,lightrag/_version.py,3,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/_version.py#L3
+S02,参数与模式,lightrag/base.py,90,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/base.py#L90
+S03,实际查询默认值,lightrag/constants.py,57,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/constants.py#L57
+S04,核心 SDK 入库,lightrag/lightrag.py,2363,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/lightrag.py#L2363
+S05,入队与文档身份,lightrag/pipeline.py,1043,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/pipeline.py#L1043
+S06,解析路由,lightrag/parser/routing.py,1420,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/parser/routing.py#L1420
+S07,固定 token 分块,lightrag/chunker/token_size.py,133,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/chunker/token_size.py#L133
+S08,段落分块,lightrag/chunker/paragraph_semantic.py,15,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/chunker/paragraph_semantic.py#L15
+S09,抽取提示格式,lightrag/prompt.py,56,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/prompt.py#L56
+S10,抽取与补抽,lightrag/operate.py,4215,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L4215
+S11,实体合并与来源限制,lightrag/operate.py,2429,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L2429
+S12,关系合并,lightrag/operate.py,2782,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L2782
+S13,写前恢复索引,lightrag/operate.py,3666,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L3666
+S14,文档处理与提交,lightrag/pipeline.py,4991,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/pipeline.py#L4991
+S15,删除与清理,lightrag/lightrag.py,6015,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/lightrag.py#L6015
+S16,图重建与降级,lightrag/operate.py,1170,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L1170
+S17,结构化查询接口,lightrag/lightrag.py,5021,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/lightrag.py#L5021
+S18,六模式路由,lightrag/lightrag.py,5114,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/lightrag.py#L5114
+S19,local 实体召回,lightrag/operate.py,6211,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L6211
+S20,global 关系召回,lightrag/operate.py,6529,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L6529
+S21,图候选轮询融合,lightrag/operate.py,5432,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L5432
+S22,chunk 轮询融合,lightrag/operate.py,5811,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L5811
+S23,图候选向量排序,lightrag/utils.py,6757,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/utils.py#L6757
+S24,重排与预算,lightrag/utils.py,7055,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/utils.py#L7055
+S25,引用编号,lightrag/utils.py,7735,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/utils.py#L7735
+S26,回答缓存条件,lightrag/operate.py,4662,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L4662
+S27,默认存储组装,lightrag/lightrag.py,696,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/lightrag.py#L696
+S28,后端注册表,lightrag/kg/__init__.py,1,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/kg/__init__.py#L1
+S29,模型角色,lightrag/llm_roles.py,1,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/llm_roles.py#L1
+S30,NDJSON 查询接口,lightrag/api/routers/query_routes.py,988,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/api/routers/query_routes.py#L988
+S31,认证白名单配置,lightrag/api/config.py,848,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/api/config.py#L848
+S32,服务绑定实例,lightrag/api/lightrag_server.py,2513,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/api/lightrag_server.py#L2513
+S33,前端依赖与脚本,lightrag_webui/package.json,1,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag_webui/package.json#L1
+S34,多实例部署边界,k8s-deploy/lightrag/values.yaml,1,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/k8s-deploy/lightrag/values.yaml#L1
+S35,离线样例词法检查,lightrag/evaluation/offline_retrieval_check.py,1,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/evaluation/offline_retrieval_check.py#L1
+S36,论文复现评价口径,docs/Reproduce.md,1,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/docs/Reproduce.md#L1
+S37,离线 CI,.github/workflows/tests.yml,33,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/.github/workflows/tests.yml#L33
+S38,PostgreSQL smoke 范围,.github/workflows/pg-smoke.yml,61,https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/.github/workflows/pg-smoke.yml#L61

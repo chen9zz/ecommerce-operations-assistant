@@ -1,0 +1,109 @@
+{
+  "date": "2026-10-03",
+  "source_directory": "/Users/chen/Agent study/LightRAG",
+  "revision": "453dce83d6d0354a06e46c8d4029a0895c4e054b",
+  "package_version": "1.5.8",
+  "api_version": "0347",
+  "git_worktree_clean": true,
+  "review_scope": "全目录盘点、核心调用链追踪、关键工程契约交叉核对；不等同于所有文件逐行审计或完整运行测试。",
+  "inventory": {
+    "tracked_files": 1329,
+    "utf8_text_files": 1295,
+    "binary_or_non_utf8_files": [
+      "README.assets/b2aaf634151b4706892693ffb43d9093.png",
+      "README.assets/iShot_2025-03-23_12.40.08.png",
+      "assets/LiteWrite.png",
+      "assets/logo.png",
+      "docs/LightRAG-API-Server.assets/image-20250323122538997.png",
+      "docs/LightRAG-API-Server.assets/image-20250323122754387.png",
+      "docs/LightRAG-API-Server.assets/image-20250323123011220.png",
+      "docs/LightRAG-API-Server.assets/image-20250323194750379.png",
+      "lightrag/api/static/swagger-ui/favicon-32x32.png",
+      "lightrag_webui/public/favicon.png",
+      "tests/parser/docx/golden/extract_characterization/empty_table_skipped.docx",
+      "tests/parser/docx/golden/extract_characterization/heading_hierarchy.docx",
+      "tests/parser/docx/golden/extract_characterization/heading_only_tail.docx",
+      "tests/parser/docx/golden/extract_characterization/numbered_list_basic.docx",
+      "tests/parser/docx/golden/extract_characterization/numbered_list_with_empty_para.docx",
+      "tests/parser/docx/golden/extract_characterization/numbering_reset_around_table.docx",
+      "tests/parser/docx/golden/extract_characterization/oversize_heading_no_break.docx",
+      "tests/parser/docx/golden/extract_characterization/oversize_heading_softbreak.docx",
+      "tests/parser/docx/golden/extract_characterization/paraid_mixed.docx",
+      "tests/parser/docx/golden/extract_characterization/sectpr_resets_numbering.docx",
+      "tests/parser/docx/golden/extract_characterization/supsub_and_soft_break.docx",
+      "tests/parser/docx/golden/extract_characterization/table_with_headers.docx",
+      "tests/parser/docx/golden/native_docx/drawings_with_assets/diagrams.blocks.assets/fig1.png",
+      "tests/parser/docx/golden/native_docx/drawings_with_assets/diagrams.blocks.assets/fig2.jpg",
+      "tests/parser/docx/golden/smart_heading/citation_swallows_heading.docx",
+      "tests/parser/docx/golden/smart_heading/demoted_parent.docx",
+      "tests/parser/docx/golden/smart_heading/demoted_parent_survivor.docx",
+      "tests/parser/docx/golden/smart_heading/outline_intact.docx",
+      "tests/parser/docx/golden/smart_heading/oversize_outline.docx",
+      "tests/parser/docx/golden/smart_heading/question_bank.docx",
+      "tests/parser/docx/golden/smart_heading/redhead.docx",
+      "tests/parser/docx/golden/smart_heading/regulation.docx",
+      "tests/parser/docx/golden/smart_heading/signature_pad.docx",
+      "tests/parser/docx/golden/smart_heading/spliced.docx"
+    ]
+  },
+  "source_references": {
+    "count": 38,
+    "local_path_and_line_range_validated": true,
+    "urls_pinned_to_reviewed_commit": true
+  },
+  "checks": [
+    {
+      "name": "Python AST parse",
+      "files": 177,
+      "errors": [],
+      "scope": "仅语法解析，不导入依赖，不代表运行验证"
+    },
+    {
+      "name": "offline_retrieval_check.py --strict",
+      "queries": 6,
+      "top_k": 2,
+      "average_recall_at_k": 1.0,
+      "mean_reciprocal_rank": 1.0,
+      "full_recall_queries": 6,
+      "no_hit_queries": 0,
+      "scope": "仓库自带词法样例检查，不使用图谱、Embedding、在线模型；不能视为 LightRAG 整体效果或电商场景评测成绩"
+    }
+  ],
+  "not_performed": [
+    "完整 pytest",
+    "前端测试或构建",
+    "API 服务启动",
+    "外部数据库连接测试",
+    "在线模型调用",
+    "论文复现实验",
+    "电商业务实现与业务评测"
+  ],
+  "ecommerce_report_status": "设计与面试准备；新增模块尚待实现；案例为模拟数据，评测表为待实测模板。",
+  "pdfs": [
+    {
+      "file": "01_LightRAG_全项目解读报告.pdf",
+      "pages": 18,
+      "outline_entries": 18,
+      "sha256": "2b6989ef57dca13d72002c43db706306feb464d3219ffa26a4bb066e55741de3",
+      "all_pages_have_text": true
+    },
+    {
+      "file": "02_电商运营助手_面试特供报告.pdf",
+      "pages": 17,
+      "outline_entries": 20,
+      "sha256": "9a8534383995d88039ee0cf1bc76c3a66ecd6979f06f896a60c89021998b736f",
+      "all_pages_have_text": true
+    }
+  ],
+  "document_qa": {
+    "method": "PDF 文本与书签检查；全部页面渲染后查看缩略页，并对架构图、表格和面试内容抽查清晰页面。",
+    "status": "passed",
+    "rendered_pages_reviewed": 35,
+    "detail_pages_reviewed": [
+      "report1:4",
+      "report1:16",
+      "report2:5",
+      "report2:14"
+    ]
+  }
+}

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#122b36"><title>商策 · 电商运营诊断工作台</title><link rel="stylesheet" href="/static/styles.css"><script defer src="/static/app.js"></script></head>
+<body>
+<a class="skip-link" href="#main">跳至主要内容</a>
+<div class="app-shell">
+<aside class="sidebar">
+<a class="brand" href="#workspace" aria-label="商策首页"><span class="brand-mark" aria-hidden="true">策</span><span>商策<small>COMMERCE OPS</small></span></a>
+<div class="shop-card"><span class="shop-avatar" aria-hidden="true">山</span><div><strong id="shop-name">山野户外 · 演示店铺</strong><span>单店运营工作空间</span></div><span class="status-dot" aria-label="本地工作空间"></span></div>
+<p class="nav-label">工作空间</p>
+<nav aria-label="主导航">
+<button class="nav-item active" data-view="workspace" aria-current="page"><span aria-hidden="true">◫</span>诊断工作台<span class="nav-arrow" aria-hidden="true">↗</span></button>
+<button class="nav-item" data-view="knowledge"><span aria-hidden="true">▤</span>规则知识</button>
+<button class="nav-item" data-view="history"><span aria-hidden="true">◷</span>诊断记录</button>
+<button class="nav-item" data-view="evaluation"><span aria-hidden="true">▥</span>评测结果</button>
+</nav>
+<div class="sidebar-note"><div class="note-symbol" aria-hidden="true">◎</div><strong>让每个运营判断<br>都有据可查。</strong><p>核验活动规则，计算优惠方案，保留判断依据。</p><span>规则 · 计算 · 证据</span></div>
+<div class="sidebar-footer"><span class="local-mark" aria-hidden="true">●</span> 本地工作空间 <span>V0.1</span></div>
+</aside>
+<div class="main-shell">
+<header class="topbar"><div class="breadcrumb">工作空间 <span>/</span> <strong id="breadcrumb-current">诊断工作台</strong></div><div class="topbar-meta"><span class="badge badge-demo">模拟数据集</span><span id="backend-badge" class="badge badge-neutral">正在连接服务</span></div></header>
+<main id="main" tabindex="-1">
+<div id="global-message" class="message error" role="alert" hidden></div>
+<section id="view-workspace" class="view">
+<div class="page-heading"><div><p class="eyebrow">OPERATIONS WORKBENCH</p><h1>把规则理清，让决策有据。</h1><p class="subtitle">从一笔购物车开始，核验优惠条件与最终应付金额。</p></div><span class="page-index" aria-hidden="true">01 <span>/ 04</span></span></div>
+<div class="intro-strip"><div class="intro-icon" aria-hidden="true">✳</div><p><strong>先核验，再建议</strong><span>每项结论关联规则证据；信息不足时会向你确认。</span></p><span class="intro-label">优惠资格诊断</span></div>
+<div class="workbench-grid">
+<div class="input-column">
+<form id="diagnosis-form" class="panel question-panel">
+<div class="panel-header"><div><span class="step-label">01 / 提出问题</span><h2>今天要确认什么？</h2></div><span class="tiny-label">优惠与活动</span></div>
+<label for="question" class="sr-only">运营问题</label><textarea id="question" name="question" required maxlength="1000" rows="4" placeholder="例如：这笔订单能用哪些优惠？哪种方案最划算？">这笔订单可以同时享受户外九折和新客满350减30吗？哪种方案最划算？</textarea>
+<p class="field-caption">仅核验 D1 户外九折和 NEW30 新客券；退款、运费及其他券需另行核实。身份默认未知，请明确选择。</p><p class="field-caption">快速试试</p><div id="presets" class="preset-list" aria-label="示例问题"><span class="muted">正在载入示例…</span></div>
+<div class="form-divider"></div>
+<div class="field"><label for="customer">客户身份</label><select id="customer" name="customer"><option value="true">新客户</option><option value="false">老客户</option><option value="unknown" selected>暂不确定，需要确认</option></select></div>
+<div class="field"><label for="at">订单时间 <span>含时区</span></label><input id="at" name="at" value="2026-10-03T12:00:00+08:00" required aria-describedby="at-help"><small id="at-help">演示活动：2026 年 10 月 · 默认北京时间（+08:00）</small></div>
+<button id="diagnose-button" type="submit" class="button primary full-width">开始诊断 <span aria-hidden="true">↗</span></button><p class="form-footnote">仅分析与建议，不修改订单或店铺配置。</p>
+</form>
+<section class="panel cart-panel"><div class="panel-header"><div><span class="step-label">02 / 业务上下文</span><h2>当前购物车</h2></div><span class="badge badge-neutral">演示订单</span></div><div id="cart-list"><p class="muted">正在载入商品…</p></div><div class="cart-total"><span>商品原价合计</span><strong id="cart-subtotal">—</strong></div></section>
+</div>
+<div class="result-column"><section id="result-panel" class="panel result-panel" aria-labelledby="result-title"><div class="panel-header"><div><span class="step-label">03 / 诊断结果</span><h2 id="result-title">把判断过程展开来看</h2></div><span id="result-state" class="badge badge-neutral">等待诊断</span></div><div id="result-content" aria-live="polite"><div class="empty-result"><div class="orbit-graphic" aria-hidden="true"><span class="orbit-center">策</span><span class="orbit-point p1">✓</span><span class="orbit-point p2">¥</span><span class="orbit-point p3">≡</span></div><h3>答案背后，也有完整依据。</h3><p>选择示例或输入问题，商策将逐项核验规则，<br>比较可用优惠，并展示对应来源。</p><div class="empty-steps"><span><b>1</b>核验条件</span><i aria-hidden="true">→</i><span><b>2</b>计算方案</span><i aria-hidden="true">→</i><span><b>3</b>追溯依据</span></div></div></div></section>
+<section class="usage-note"><span aria-hidden="true">ⓘ</span><div><strong>使用说明</strong><p>本工作台使用自建模拟规则，不代表任何电商平台现行政策。适用于优惠资格、清仓排除、优惠叠加与活动时间核验。可在「规则知识」中查看规则全文。</p></div></section></div>
+</div>
+</section>
+<section id="view-knowledge" class="view" hidden><div class="page-heading"><div><p class="eyebrow">RULE KNOWLEDGE</p><h1>规则有来源，判断有边界。</h1><p class="subtitle">查看诊断引用的完整规则、来源与版本。</p></div><span class="page-index" aria-hidden="true">02 <span>/ 04</span></span></div><div class="section-banner">自建模拟规则 · 仅用于演示与验证，不代表平台现行政策。</div><div id="knowledge-content" class="knowledge-grid"></div></section>
+<section id="view-history" class="view" hidden><div class="page-heading"><div><p class="eyebrow">DIAGNOSIS HISTORY</p><h1>每一次判断，都可回看。</h1><p class="subtitle">查看已保存的诊断与依据，继续补充尚未确认的信息。</p></div><button class="button secondary" id="refresh-history">刷新记录 <span aria-hidden="true">↻</span></button></div><div id="history-content" class="history-list"></div></section>
+<section id="view-evaluation" class="view" hidden><div class="page-heading"><div><p class="eyebrow">EVALUATION RESULTS</p><h1>验证能力，也明确边界。</h1><p class="subtitle">仅展示本次实际运行的检查结果与验证范围。</p></div><span class="page-index" aria-hidden="true">04 <span>/ 04</span></span></div><div id="evaluation-content"></div></section>
+<footer class="main-footer"><span>商策 CommerceOps</span><span>用可核验的规则，支撑每一次运营判断。</span></footer>
+</main></div></div>
+</body></html>

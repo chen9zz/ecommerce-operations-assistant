@@ -1,0 +1,759 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LightRAG_全项目解读报告</title><style>
+:root{--ink:#193c48;--text:#253641;--muted:#64747c;--line:#dce6e9;--accent:#b46030}
+*{box-sizing:border-box}body{margin:0;background:#f4f6f5;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.9}
+.layout{display:grid;grid-template-columns:270px minmax(0,950px);justify-content:center;gap:36px;padding:34px 24px}.sidebar{position:sticky;top:30px;align-self:start;max-height:90vh;overflow:auto;font-size:13px}.sidebar b{font-size:15px;color:var(--ink)}.sidebar a{display:block;padding:6px 0;text-decoration:none;color:#47606b;line-height:1.55}.sidebar a:hover{color:var(--accent)}main{min-width:0;background:white;padding:54px 56px;box-shadow:0 5px 30px #1b3e4a08;border:1px solid var(--line);border-radius:10px}h1{font-size:34px;line-height:1.4;letter-spacing:-.7px;color:var(--ink);margin:15px 0 20px}h2{font-size:24px;line-height:1.5;color:var(--ink);margin:48px 0 20px;padding-top:18px;border-top:2px solid var(--line);scroll-margin-top:25px}h3{font-size:19px;color:#245766;margin:30px 0 12px;line-height:1.6}p{margin:14px 0}a{color:#1e7088;text-underline-offset:3px;overflow-wrap:anywhere}code{font-size:.92em;background:#eff4f5;border-radius:4px;padding:2px 5px;overflow-wrap:anywhere}pre{padding:20px;background:#edf3f4;border-left:4px solid #417d89;border-radius:5px;overflow:auto;line-height:1.6;font-family:ui-monospace,SFMono-Regular,Consolas,"PingFang SC",monospace;font-size:12px}pre code{padding:0;background:transparent}table{border-collapse:collapse;width:100%;font-size:13px;line-height:1.65;margin:24px 0}th{text-align:left;background:#e7f0f2;color:var(--ink)}td,th{padding:12px 10px;border:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}tr:nth-child(even) td{background:#fafcfc}blockquote{border-left:4px solid var(--accent);padding:4px 18px;background:#fbf6f1;margin:20px 0}.eyebrow{color:var(--accent);font-weight:700;letter-spacing:2px;font-size:12px}.subtitle{color:var(--muted);font-size:14px}.download{display:inline-block;border:1px solid var(--line);padding:4px 12px;border-radius:6px;margin:12px 8px 12px 0;font-size:13px;text-decoration:none}footer{margin-top:50px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:20px}.topnav{margin-bottom:20px}
+@media(max-width:1000px){.layout{display:block;padding:14px}.sidebar{position:relative;max-height:200px;margin-bottom:25px}main{padding:28px 22px}h1{font-size:29px}table{font-size:12px}}
+@media print{body{background:white}.layout{display:block;padding:0}.sidebar,.download,.topnav{display:none}main{box-shadow:none;border:0;padding:0}h2,h3{break-after:avoid}table,pre{break-inside:auto}tr{break-inside:avoid}a{color:inherit}h2{font-size:20px}h1{font-size:28px}p{orphans:3;widows:3}}
+</style></head><body><div class="layout"><aside class="sidebar"><div class="topnav"><a href="00_阅读指南.html">← 返回阅读指南</a></div><b>源码解读 · 阅读目录</b><a href="#section-1">阅读说明与证据边界</a><a href="#section-2">1. 项目究竟解决什么问题</a><a href="#section-3">2. 背景：为什么从向量 RAG 走向图谱辅助检索</a><a href="#section-4">3. 用一张系统图建立整体认识</a><a href="#section-5">4. 整个仓库的职责地图</a><a href="#section-6">5. 数据模型：一份文档会变成哪些东西</a><a href="#section-7">6. 入库流程：从文件到知识索引</a><a href="#section-8">7. 查询流程：一次回答究竟经过什么</a><a href="#section-9">8. 模型角色、Embedding 与缓存</a><a href="#section-10">9. 存储、并发与一致性</a><a href="#section-11">10. API 与 WebUI：框架怎样成为可操作的系统</a><a href="#section-12">11. 配置、部署与运维如何理解</a><a href="#section-13">12. 测试与评测：如何避免“看起来回答不错”</a><a href="#section-14">13. 常见失败如何定位</a><a href="#section-15">14. 与 RepoPilot-R 的关系及学习路线</a><a href="#section-16">15. 能力边界与结论</a><a href="#section-17">16. 固定版本源码索引与核验记录</a><a href="#section-18">17. 检索进阶：面试追问时值得理解的细节</a></aside><main><div class="eyebrow">LIGHTRAG / 源码解读</div><div class="subtitle">从基础原理到当前版本的完整工程链路</div><a class="download" href="01_LightRAG_全项目解读报告.pdf">阅读 PDF</a><a class="download" href="01_LightRAG_全项目解读报告.md">可编辑 Markdown</a><h1>LightRAG 全项目解读报告</h1>
+<p>从 RAG 基础、源码主链路到服务化与工程边界</p>
+<p>版本基线：LightRAG 1.5.8 · API 0347 · 本地提交 453dce83d6d0354a06e46c8d4029a0895c4e054b</p>
+<p>检视日期：2026 年 10 月 3 日。读者：准备 Agent／AI 应用开发实习、希望读懂并二次开发 LightRAG 的开发者。</p>
+<h2 id="section-1">阅读说明与证据边界</h2>
+<p>本报告围绕本地 <code>Agent study/LightRAG</code> 编写。该目录是一个干净的 Git 工作区，最近提交日期为 2026-09-26；包版本来自 <code>lightrag/_version.py</code>。截至检视时，Git 跟踪 1,329 个文件，其中核心包 198 个、WebUI 264 个、测试目录 654 个。文件数量不是测试通过数，也不是质量评分。</p>
+<p>本次采用“完整目录盘点 + 核心调用链逐段追踪 + 关键工程契约交叉核对”的方法。覆盖核心索引与检索、解析与分块、模型适配、存储、API、WebUI、配置、部署、评测、测试和复现目录；不把目录盘点表述为逐行审计了每个后端的所有实现。没有安装项目依赖、调用在线模型、启动数据库、运行完整测试或复现论文指标。因此，“源码具备能力”“文档声称的效果”“本次实际验证的事实”分别表述。</p>
+<p>正文中的【源码】指本地可定位实现；【背景】指论文或官方资料；【建议】指为学习或二次开发给出的工程判断。末尾的源码索引使用固定提交链接，避免上游更新后行号漂移。第二份报告中的电商系统是基于这些能力的设计，不是这个仓库已经实现的业务产品。</p>
+<p>建议分三遍阅读：第一遍读第 1 至 4 章建立整体认识；第二遍读入库、检索和存储章节并对照代码；第三遍结合 API、评测和风险章节准备二次开发。不要以“能背出目录”为目标，而要能解释一份资料如何变成证据、一条答案如何从证据产生。</p>
+<h2 id="section-2">1. 项目究竟解决什么问题</h2>
+<p>LightRAG 是一个检索增强生成框架。它先把外部资料处理成可检索的文本块、实体和关系，再在用户提问时取回相关信息交给语言模型组织答案。它既有可嵌入 Python 程序的 SDK，也有可以独立运行的 API 服务和网页管理界面。</p>
+<p>大模型的参数知识并不自动包含你的业务文档，而且知识可能过时。把所有文档放进提示词又会受到成本、上下文长度和干扰信息的限制。RAG 将问题拆成两件事：检索系统负责找到证据，生成模型负责依据证据表达答案。检索错了，再强的模型也可能把错误资料解释得很流畅。</p>
+<p>LightRAG 的特色是同时利用“原文语义相似”与“实体之间的关联”。例如：某活动适用于某商品集合，商品属于该集合，某类优惠与另一类优惠互斥。分别位于多篇文档的这些事实，可以通过实体和关系组织起来。但是图谱仍然来自文本抽取，存在遗漏和错误，不能把边当作未经验证的业务真理。</p>
+<p>从应用层次看，LightRAG 主要位于知识与检索层。它不是通用任务执行 Agent，也不会因为配置了多个模型角色就自动成为多 Agent 系统。若要执行查询订单、诊断活动、修改设置等任务，需要外层业务流程、工具接口与授权机制。</p>
+<h2 id="section-3">2. 背景：为什么从向量 RAG 走向图谱辅助检索</h2>
+<h3>2.1 2020 年 RAG 研究与今天的工程实践</h3>
+<p>【背景】Lewis 等人的 2020 年论文讨论了将参数化生成模型与非参数知识检索结合，用外部证据支持知识密集型任务。今天常见的“切块、向量化、检索、拼接提示词”是这一思路的工程化家族，不应认为所有现代 RAG 系统都完整复现了论文训练方法。<a href="https://arxiv.org/abs/2005.11401">RAG 原始论文</a></p>
+<p>一个常见基线是：文档分块，Embedding 模型把块编码成向量；问题也被编码为向量；向量库返回相似文本；生成模型根据文本作答。这种方法便于实现，也适合单点事实查询。遇到多文档关联、术语别名、跨章节例外条件时，单次相似检索可能只找到其中一部分。</p>
+<h3>2.2 图谱为什么可能有帮助</h3>
+<p>假设三份资料分别说：“夏季活动覆盖户外集合”“商品 P 属于户外集合”“清仓商品不参加夏季活动”。问题是“P 为什么没享受优惠”。只检索与 P 最相似的商品说明，可能遗漏活动排除条款；只检索活动介绍，又可能遗漏 P 的属性。图谱能把关系组织为额外的召回线索，再回到原文核实依据。</p>
+<p>图谱不是免费收益。建图需要抽取模型调用、实体合并、关系维护和存储；错误的实体合并会把不相干资料连接起来。最终应比较它在目标问题集上带来的收益是否抵得上索引成本与查询延迟。</p>
+<h3>2.3 LightRAG 与 Microsoft GraphRAG 的关系</h3>
+<p>【背景】Microsoft GraphRAG 的经典流程包括实体关系抽取、图社区层次构建和社区摘要；其 global search 使用社区摘要回答全局问题。LightRAG 论文于 2024-10-08 首次提交，强调图结构与向量表示结合、低层与高层检索和增量更新。<a href="https://microsoft.github.io/graphrag/">GraphRAG 官方说明</a>；<a href="https://arxiv.org/abs/2410.05779">LightRAG 论文</a></p>
+<p>两者都属于图增强 RAG，但同名模式不能直接互换。尤其不能把 Microsoft GraphRAG 的“社区摘要 global search”套到本地 LightRAG 的 <code>global</code> 实现上。后文以实际查询函数说明差异。</p>
+<h3>2.4 论文方法与当前仓库是两个层次</h3>
+<p>本地 1.5.8 已经有多种解析器、分块策略、模型角色、数据库适配、管理界面和故障恢复契约。论文用于理解设计动机；当前源码用于理解真实接口和运行行为。早期博客中只围绕一个 <code>lightrag.py</code> 文件的讲解，已经不足以覆盖这个版本。</p>
+<h2 id="section-4">3. 用一张系统图建立整体认识</h2>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 507 267" role="img" aria-label="系统架构图" style="width:100%;height:auto;font-family:PingFang SC,Microsoft YaHei,sans-serif"><defs><marker id="arrow-source" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6" fill="none" stroke="#648590"/></marker></defs><polyline points="253.5,34.2 253.5,48.6" fill="none" stroke="#648590" stroke-width="1" marker-end="url(#arrow-source)"/><polyline points="253.5,75.60000000000001 253.5,86.4 121,86.4 121,99.9" fill="none" stroke="#648590" stroke-width="1" marker-end="url(#arrow-source)"/><polyline points="253.5,86.4 386,86.4 386,99.9" fill="none" stroke="#648590" stroke-width="1" marker-end="url(#arrow-source)"/><polyline points="121,178.20000000000002 121,199.8" fill="none" stroke="#648590" stroke-width="1" marker-end="url(#arrow-source)"/><polyline points="234,228.6 253,228.6 253,144.0 273,144.0" fill="none" stroke="#648590" stroke-width="1" marker-end="url(#arrow-source)"/><polyline points="386,178.20000000000002 386,199.8" fill="none" stroke="#648590" stroke-width="1" marker-end="url(#arrow-source)"/><rect x="99" y="7.2" width="309" height="27.0" rx="5" fill="#edf4f5" stroke="#d8e4e8"/><text x="253.5" y="23.7" text-anchor="middle" font-size="9.5" fill="#193c48">管理网页 / 业务客户端 / Python SDK</text><rect x="139" y="48.6" width="229" height="27.0" rx="5" fill="#edf4f5" stroke="#d8e4e8"/><text x="253.5" y="65.1" text-anchor="middle" font-size="9.5" fill="#193c48">FastAPI / LightRAG 公共接口</text><rect x="8" y="99.9" width="226" height="78.3" rx="5" fill="#edf4f5" stroke="#d8e4e8"/><text x="121.0" y="128.05" text-anchor="middle" font-size="9.5" fill="#193c48">入库路径</text><text x="121.0" y="142.05" text-anchor="middle" font-size="9.5" fill="#193c48">文档登记 → 解析与分块</text><text x="121.0" y="156.05" text-anchor="middle" font-size="9.5" fill="#193c48">实体关系抽取与合并</text><rect x="273" y="99.9" width="226" height="78.3" rx="5" fill="#edf4f5" stroke="#d8e4e8"/><text x="386.0" y="128.05" text-anchor="middle" font-size="9.5" fill="#193c48">查询路径</text><text x="386.0" y="142.05" text-anchor="middle" font-size="9.5" fill="#193c48">关键词 / 问题向量</text><text x="386.0" y="156.05" text-anchor="middle" font-size="9.5" fill="#193c48">图检索 / 文本块向量检索</text><rect x="8" y="199.8" width="226" height="57.6" rx="5" fill="#edf4f5" stroke="#d8e4e8"/><text x="121.0" y="217.60000000000002" text-anchor="middle" font-size="9.5" fill="#193c48">四类存储接口</text><text x="121.0" y="231.60000000000002" text-anchor="middle" font-size="9.5" fill="#193c48">KV · 向量 · 图 · 文档状态</text><text x="121.0" y="245.60000000000002" text-anchor="middle" font-size="9.5" fill="#193c48">来源追踪与持久化</text><rect x="273" y="199.8" width="226" height="57.6" rx="5" fill="#edf4f5" stroke="#d8e4e8"/><text x="386.0" y="217.60000000000002" text-anchor="middle" font-size="9.5" fill="#193c48">证据处理与回答</text><text x="386.0" y="231.60000000000002" text-anchor="middle" font-size="9.5" fill="#193c48">去重 / 重排 / token 预算</text><text x="386.0" y="245.60000000000002" text-anchor="middle" font-size="9.5" fill="#193c48">原文与图谱上下文 → 答案及引用</text></svg>
+<p>最重要的切分是索引阶段与查询阶段。索引阶段一般发生在资料上传或更新后，主要成本是解析、抽取和向量化；查询阶段面对用户，主要关注证据质量、响应时间和成本。它们可能共享模型和缓存，但不应混成一笔无法解释的“LLM 耗时”。</p>
+<h2 id="section-5">4. 整个仓库的职责地图</h2>
+<table>
+<thead>
+<tr>
+<th>路径</th>
+<th>职责</th>
+<th>阅读时要回答的问题</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>lightrag/lightrag.py</code></td>
+<td>公共核心类、存储组装、查询入口、管理操作</td>
+<td>初始化了什么？请求如何分发？</td>
+</tr>
+<tr>
+<td><code>lightrag/pipeline.py</code></td>
+<td>文档登记、解析、分块与入库调度</td>
+<td>文档何时算完成？失败如何恢复？</td>
+</tr>
+<tr>
+<td><code>lightrag/operate.py</code></td>
+<td>抽取、合并与多模式检索的关键算法</td>
+<td>召回依据、合并顺序、证据来源是什么？</td>
+</tr>
+<tr>
+<td><code>lightrag/base.py</code></td>
+<td>查询参数、数据结构、抽象存储接口</td>
+<td>哪些能力是所有后端要遵守的契约？</td>
+</tr>
+<tr>
+<td><code>lightrag/parser/</code></td>
+<td>原生和外部解析器适配</td>
+<td>文件格式如何转成统一中间表示？</td>
+</tr>
+<tr>
+<td><code>lightrag/chunker/</code></td>
+<td>不同分块策略</td>
+<td>哪种策略适合当前资料结构？</td>
+</tr>
+<tr>
+<td><code>lightrag/llm/</code>、<code>llm_roles.py</code></td>
+<td>模型提供商适配与角色配置</td>
+<td>哪个阶段调用哪个模型？</td>
+</tr>
+<tr>
+<td><code>lightrag/kg/</code></td>
+<td>KV、向量、图、文档状态的后端实现</td>
+<td>如何隔离数据、写入与恢复？</td>
+</tr>
+<tr>
+<td><code>lightrag/api/</code></td>
+<td>服务配置、认证、路由、静态页面</td>
+<td>SDK 如何变成可以部署的服务？</td>
+</tr>
+<tr>
+<td><code>lightrag_webui/</code></td>
+<td>文档、知识图谱、问答与设置界面</td>
+<td>前端如何观察后端处理进度？</td>
+</tr>
+<tr>
+<td><code>lightrag/evaluation/</code></td>
+<td>RAGAS 评估与离线样例检查</td>
+<td>哪些指标需要模型？哪些只是样例检查？</td>
+</tr>
+<tr>
+<td><code>lightrag/tools/</code></td>
+<td>重建向量库、修复追踪、清缓存等</td>
+<td>改模型或遇到异常后如何维护？</td>
+</tr>
+<tr>
+<td><code>prompts/</code></td>
+<td>自定义提示与实体类型示例</td>
+<td>领域适配从哪里进入？</td>
+</tr>
+<tr>
+<td><code>examples/</code></td>
+<td>SDK、模型与存储的示例</td>
+<td>最小可运行调用顺序是什么？</td>
+</tr>
+<tr>
+<td><code>reproduce/</code></td>
+<td>论文实验工作流</td>
+<td>论文比较结果采用什么评价口径？</td>
+</tr>
+<tr>
+<td><code>docs/</code></td>
+<td>API、部署、解析和工程契约</td>
+<td>实现中的限制有没有明确说明？</td>
+</tr>
+<tr>
+<td><code>tests/</code>、<code>.github/</code></td>
+<td>回归测试与 CI</td>
+<td>哪些边界有测试，哪些需外部服务？</td>
+</tr>
+<tr>
+<td><code>scripts/</code>、<code>Makefile</code></td>
+<td>环境生成、开发与发布辅助</td>
+<td>配置哪些是输入，哪些是生成产物？</td>
+</tr>
+<tr>
+<td><code>k8s-deploy/</code>、Compose、Dockerfile</td>
+<td>容器与集群部署材料</td>
+<td>应用、解析器、数据库如何连接？</td>
+</tr>
+</tbody></table>
+<p><code>LightRAG</code> 通过内部 mixin 组合模型角色、存储迁移和入库流程。这是实现层面的拆分，公共入口仍然是 <code>LightRAG</code>。阅读时先跟公共入口，再按调用跳转，避免从长达数千行的工具文件开始逐行背诵。</p>
+<h2 id="section-6">5. 数据模型：一份文档会变成哪些东西</h2>
+<p>可以把原文理解为证据本体，把图谱和向量理解为寻找证据的索引。一个完整入库通常涉及以下对象：</p>
+<table>
+<thead>
+<tr>
+<th>对象</th>
+<th>作用</th>
+<th>不能混淆的概念</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>原始／规范化文档</td>
+<td>记录内容、来源和文档身份</td>
+<td>文件名不是版本，也不等于业务有效期</td>
+</tr>
+<tr>
+<td>文档状态</td>
+<td>记录待处理、处理中、成功、失败及恢复信息</td>
+<td>上传成功不等于索引完成</td>
+</tr>
+<tr>
+<td>文本块 chunk</td>
+<td>承载检索与回答所需原文</td>
+<td>token 不等于中文字符数</td>
+</tr>
+<tr>
+<td>实体 entity</td>
+<td>概念、组织、产品、活动等命名对象</td>
+<td>同名不一定是同一业务对象</td>
+</tr>
+<tr>
+<td>关系 relation</td>
+<td>两个实体间的关联描述与来源</td>
+<td>抽取关系不是经过规则引擎验证的事实</td>
+</tr>
+<tr>
+<td>三组向量</td>
+<td>实体、关系、文本块的语义搜索入口</td>
+<td>图节点不是只靠图遍历找到的</td>
+</tr>
+<tr>
+<td>来源追踪</td>
+<td>将实体和关系追溯到 chunk 和文档</td>
+<td>引用编号不是自动完成的事实核验</td>
+</tr>
+<tr>
+<td>LLM 缓存</td>
+<td>复用抽取、关键词或回答计算</td>
+<td>命中缓存不代表资料仍处于有效期</td>
+</tr>
+</tbody></table>
+<p>一条关系的描述可能由多个块的抽取结果合并而来。图上展示的文字因此可能是加工后的摘要。回答关键问题时，仍应保留回到原文的能力，特别是例外条件、金额阈值和生效时间。</p>
+<p>四种存储类型不是强制安装四套数据库。它们表示四类职责；一个 PostgreSQL 部署可以承担多种职责，图后端也可以另选 Neo4j。反过来，同一产品名称的数据库也不意味着应用层多步操作就自动拥有完整事务。</p>
+<h2 id="section-7">6. 入库流程：从文件到知识索引</h2>
+<h3>6.1 先初始化，再插入</h3>
+<p>核心使用顺序是：创建 <code>LightRAG</code> 实例，注入模型与 Embedding 函数，调用 <code>initialize_storages()</code>，再执行 <code>ainsert()</code> 或查询，结束时调用 <code>finalize_storages()</code>。构造对象并不等于数据库连接、共享状态和存储生命周期已经准备好。示例程序的初始化顺序值得先理解，再替换为自己的模型服务。</p>
+<p>SDK 可直接接受文本；服务端上传文件还要经历文件保存、解析路由和后台处理。长任务不应被理解为一次同步 HTTP 请求内做完所有事情。业务前端需要展示文档处理状态，而不是上传后立即承诺内容可查。</p>
+<h3>6.2 文档身份、内容与状态分开管理</h3>
+<p>当前实现区分文档身份、来源键和内容哈希，不能照搬“所有对象的 ID 都等于文本 MD5”的旧版解释。常规入库路径中，chunk 身份会结合文档 ID 与块序号；不同入口和自定义 KG 路径还可能采用不同构造方式。这样做有利于追踪一份文档贡献了哪些块，但也要求更新时正确处理旧块与派生索引。</p>
+<p>文档状态是调度与恢复的关键依据。处理者通过共享状态、锁与通知协作；入库和处理可以并行，并不是 <code>busy=True</code> 就拒绝所有上传。清空、删除或特定扫描阶段需要更强排他条件。FAILED 文档不应被描述为无限自动重试：该分支要求显式的手动重试请求，再给失败文档一次处理机会。</p>
+<p>主要状态是 PENDING → PARSING → ANALYZING → PROCESSING → PROCESSED，异常进入 FAILED。派生存储刷新完成后才记录 PROCESSED，但部分多模态软失败、内容截断或显式跳过图谱抽取也可能允许流程完成。因此 PROCESSED 表示流程状态，不保证每张图片、每条关系都被正确理解。</p>
+<h3>6.3 解析器的工作是保留结构，而不是直接回答问题</h3>
+<p>原始 PDF、Word、表格和 Markdown 都要变成可处理内容。当前解析层支持 legacy、native、MinerU 和 Docling 路由；原生 DOCX 解析器及外部 HTTP 解析适配器分别存在。外部解析能力需要对应服务与配置，并不意味着仅安装 Python 包就具备所有 OCR、版面和多模态能力。</p>
+<p>解析质量决定后续上限。一张“适用条件”表若被拆成无表头的单行，即使实体抽取模型很强也可能误读；一个“以下情况不适用”的标题若丢失，后面的条目可能被错误理解为正面规则。多模态分析可利用 VLM 补充图片内容，但图片识别结果仍应标明来源和不确定性。</p>
+<p>建议先用结构清晰的 Markdown／HTML 资料做首轮业务验证，再引入扫描 PDF；这样能够区分检索问题与 OCR 问题，减少一开始同时排查多个环节的成本。</p>
+<h3>6.4 分块策略决定证据边界</h3>
+<p>本地支持 F、R、V、P、C 等处理选项，对应固定 token、递归字符、语义向量、段落语义和自定义分块路径。不同分支有自己的前提，不能把所有选项当成简单替换一个数值。</p>
+<table>
+<thead>
+<tr>
+<th>策略</th>
+<th>直观理解</th>
+<th>优点</th>
+<th>需要关注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>固定 token</td>
+<td>按长度切割并保留重叠</td>
+<td>简单、可控、适合基线</td>
+<td>条件与例外可能分离</td>
+</tr>
+<tr>
+<td>递归字符</td>
+<td>尽量沿较自然的分隔符切分</td>
+<td>较好保留段落结构</td>
+<td>文档格式不规范时仍可能断句</td>
+</tr>
+<tr>
+<td>语义向量</td>
+<td>用语义变化辅助判断边界</td>
+<td>适合主题变化明显的文本</td>
+<td>额外 Embedding 成本与阈值敏感性</td>
+</tr>
+<tr>
+<td>段落语义</td>
+<td>在段落结构上组织语义块</td>
+<td>适合保留标题和正文关系</td>
+<td>依赖解析结果与段落结构</td>
+</tr>
+<tr>
+<td>自定义</td>
+<td>业务方提供或调整块</td>
+<td>可保留完整规则、表格</td>
+<td>需要自行验证长度、身份和来源一致性</td>
+</tr>
+</tbody></table>
+<p>基础固定分块默认是 1,200 tokens、100 tokens overlap；实际运行可被配置覆盖。短块可能召回精准但缺少上下文，长块保留关系却增加噪声和生成成本。电商规则中“适用范围、例外、起止时间”最好共同保留，必要时将父标题和来源信息附到块中。</p>
+<h3>6.5 实体与关系抽取</h3>
+<p>抽取阶段让 EXTRACT 模型从每个块中提出实体名称、类型、描述，以及实体对之间的关系、关键词和描述。提示模板规定输出形式，代码负责解析、校验与容错。实体类型提示可做领域适配，但没有一个提示词能保证所有名称都映射成唯一的业务 ID。</p>
+<p>例如：“冬季专场包含保暖系列，但预售商品除外。”可抽出“冬季专场”“保暖系列”“预售商品”等对象及其关系。问题在于“包含”“排除”的方向与条件必须被保留。若压缩描述只剩“活动与预售商品相关”，图谱虽然看起来连接丰富，业务意义已经丢失。</p>
+<p>默认抽取文本采用 delimiter 格式：实体记录含类别、名称、类型、描述，关系记录含类别、两个端点、关键词与描述。当前常规关系会按排序后的端点对聚合，默认 NetworkX 使用无向图，关系默认权重也不是置信概率。因此“包含谁、排除谁”需要从描述、关键词或业务规则结构中保留，不能只靠一根带方向的图示箭头推断。</p>
+<p>源码包含补充抽取机制。当前 <code>entity_extract_max_gleaning</code> 大于零时，该实现增加一轮补充抽取；不能直接宣称把参数设为 N 就执行 N 次补充循环。学习时应看循环与条件分支，而不是只依据参数名称猜测行为。</p>
+<h3>6.6 合并、摘要与来源关联</h3>
+<p>同一实体可能被多个块提及。合并需要汇总描述、处理类型、保留来源，并在描述过长时调用模型摘要。关系同样需要合并。图索引与实体／关系向量索引需要一起更新，否则可能出现“向量找到对象，但图里没有最新属性”的中间状态。</p>
+<p>合并不能等同于完善的实体消歧系统。“会员”“VIP”“金卡会员”是否同一对象，要由领域定义决定；两个店铺都叫“夏季促销”的活动也不应被合并。业务系统可用规范 ID、别名表和版本前缀减少误合并，而不是把这一责任全部留给抽取模型。</p>
+<p>来源追踪包括实体／关系对应的 chunk 集合，以及文档贡献的实体与关系锚点。它们不仅用于展示引用，还关系到删除时如何知道哪些派生对象应被修改。原文与索引的关联是核心数据契约，不是可有可无的 UI 装饰。</p>
+<p>还要区分完整来源追踪表与图上用于检索的来源视图。默认 source_id 上限为 200，KEEP 策略保留较早来源；后续新描述可能因来源上限被过滤。完整追踪表增加了来源，不保证图描述已吸收每条新事实。这是应通过业务增量测试检查的细节。</p>
+<p>写前恢复索引的顺序也很重要：先持久化文档候选实体／关系全集，再推进图写入状态，最后修改图。若进程中断，恢复程序仍能知道哪些对象可能受影响。候选全集不等于所有对象已经创建成功，合法的空索引也与索引丢失不同。</p>
+<h3>6.7 增量更新与删除为什么复杂</h3>
+<p>新增文档可以抽取后并入现有图，而不必总是从零建图。删除文档则更复杂：某实体可能同时被三份文档支持，删除其中一份不应删除整个实体。系统需要移除该文档贡献，保留其他来源，必要时利用抽取缓存重建描述和关系。</p>
+<p>本地实现使用文档级贡献锚点与恢复记录；删除前无法证明来源归属的情形可以被拒绝，而不是贸然继续。另一方面，重建存在 <code>best_effort</code> 默认策略和缓存缺失等降级路径，不能声称删除后所有图谱语义必然等同于“只用剩余文档完全重建”的结果。</p>
+<p>业务上应给更新建立明确验收：旧文档不可检索、共享实体仍存在、已删除来源不出现在引用中、失败记录可查，并按需要触发重建。知识库版本切换与回答缓存失效也要纳入更新流程。</p>
+<p>“增量”至少有三种不同含义：新增文档加入现有索引；失败文档清理旧贡献后重处理；自定义 chunk patch 追加。普通重复 enqueue 不自动覆盖同名文档，修改 parser hint 也不代表系统一定重解析已经处理完的资料。业务更新流程应明确选择哪条入口。</p>
+<h2 id="section-8">7. 查询流程：一次回答究竟经过什么</h2>
+<h3>7.1 六种模式的准确含义</h3>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>主要入口与证据</th>
+<th>适合做什么实验</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>local</code></td>
+<td>低层关键词检索实体向量，再取图中的实体及相关关系</td>
+<td>明确实体的问题</td>
+</tr>
+<tr>
+<td><code>global</code></td>
+<td>高层关键词检索关系向量，再取关系和端点实体</td>
+<td>围绕关系、主题的问题</td>
+</tr>
+<tr>
+<td><code>hybrid</code></td>
+<td>合并 local 与 global 的图检索结果</td>
+<td>同时需要实体与关系线索</td>
+</tr>
+<tr>
+<td><code>mix</code></td>
+<td>图检索结果加原文 chunk 向量召回</td>
+<td>兼顾关系线索与未被抽取的原文</td>
+</tr>
+<tr>
+<td><code>naive</code></td>
+<td>直接检索 chunk 向量，不使用图路径</td>
+<td>基线或适合文本直接匹配的问题</td>
+</tr>
+<tr>
+<td><code>bypass</code></td>
+<td>跳过知识检索，走模型生成路径</td>
+<td>排查生成层或对照实验</td>
+</tr>
+</tbody></table>
+<p>特别纠错：仓库 <code>AGENTS.md</code> 对 global 的概述包含 community/summary 字样，但本地 <code>operate.py</code> 的实际调用是关系向量检索及图属性获取。理解执行行为应以源码为准。global 也不意味着每次读取全图，更不等于自动进行任意长度的多跳逻辑推理。</p>
+<h3>7.2 关键词提取：实体线索与主题线索分开</h3>
+<p>KEYWORD 模型为问题生成高层和低层关键词。低层偏向具体对象，高层偏向关系或主题。调用方也可以通过参数提供关键词。关键词失误会影响图检索；mix 中原文块向量召回因此具有补充价值，但不能保证弥补所有抽取或关键词错误。</p>
+<p>“这个活动呢”“它为什么不生效”这样的追问依赖对话中的对象。当前 QueryParam 的历史消息主要进入生成上下文，不应据此宣称检索阶段已经完整实现指代消解。面向业务时，可在外层把问题改写成带明确活动 ID 和时间的独立问题，再进入检索，并保留改写记录以便排查。</p>
+<h3>7.3 图路径：先语义找入口，再按关系补上下文</h3>
+<p>local 先对低层关键词查询实体向量，读取对应节点属性与图连接；global 先对高层关键词查询关系向量，读取边属性及端点实体。这样向量检索承担模糊匹配，图结构承担关联组织。它不是先把整个图送给模型，也不是每个问题都让模型生成 Cypher。</p>
+<p>图路径随后需要找到支持实体或关系的原文块。只有摘要没有原文，很难解释具体条件；只有原文没有关联，又可能漏掉跨文档约束。LightRAG 组织两者是为了给最终生成提供更完整、可追踪的材料。</p>
+<h3>7.4 mix 如何合并结果</h3>
+<p>当前实现对实体／关系结果做轮询式交错与去重；来自不同检索来源的 chunk 也进行轮询合并与去重。轮询可以让一条来源通道不轻易淹没其他通道，但它并不是 RRF。RRF 需要按各列表中的名次计算并累积倒数分数，例如 <code>sum(1/(k + rank))</code>；本地这条融合路径没有这种求分行为。</p>
+<p>如果二次开发想改成 RRF，应说明那是自己新增的融合实验，并同时比较收益、额外复杂度与跨通道分数解释。不要把自己知道的检索术语默认套到项目上。</p>
+<h3>7.5 重排序与 token 预算</h3>
+<p>初步召回追求不遗漏候选；reranker 用问题与候选文本的匹配程度重新排序，帮助在有限上下文中保留更有用的内容。它无法修复根本没有被召回的证据，也不等于判定规则是否适用于某个商家。</p>
+<p><code>enable_rerank</code> 默认开启，但若未配置可用的重排序函数，就不能声称实际执行了 rerank。应从日志和调用记录确认是否启用。重排序后的块还受数量与 token 预算约束；“向量库找到了某块”和“该块最终进入生成提示词”是两个不同的事实。</p>
+<table>
+<thead>
+<tr>
+<th>本地基础默认</th>
+<th align="right">值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>mode</code></td>
+<td align="right">mix</td>
+<td>默认查询模式</td>
+</tr>
+<tr>
+<td><code>top_k</code></td>
+<td align="right">40</td>
+<td>local 的实体或 global 的关系初始召回规模</td>
+</tr>
+<tr>
+<td><code>chunk_top_k</code></td>
+<td align="right">20</td>
+<td>文本块召回与保留相关限制</td>
+</tr>
+<tr>
+<td><code>max_entity_tokens</code></td>
+<td align="right">6,000</td>
+<td>实体上下文预算</td>
+</tr>
+<tr>
+<td><code>max_relation_tokens</code></td>
+<td align="right">8,000</td>
+<td>关系上下文预算</td>
+</tr>
+<tr>
+<td><code>max_total_tokens</code></td>
+<td align="right">30,000</td>
+<td>查询上下文总预算参数</td>
+</tr>
+</tbody></table>
+<p>这些是源码常量和参数默认值，不是某业务的最佳配置；环境变量和请求参数可能覆盖它们。旧示例中出现 <code>top_k=60</code> 不能被当作本地实际默认。总预算也不能替代对所用模型的输入、输出和历史消息空间的完整计算。</p>
+<h3>7.6 生成与引用</h3>
+<p>最终生成通常接收问题、格式化实体与关系、原文块、系统约束和可用历史。SDK 可以选择只返回上下文、只看提示词或生成答案；API 也有面向结构化检索数据的路径。这使开发者能把“检索对不对”和“模型回答对不对”分开检查。</p>
+<p>引用支持将答案追溯到资料，但自动编号只是证据组织，不是每句话与来源的逻辑蕴含证明。比如来源写“部分套餐支持”，答案却写“所有商家都支持”，即使附着同一链接也仍是错误。需要额外检查结论、适用条件、时间范围是否一致。</p>
+<h2 id="section-9">8. 模型角色、Embedding 与缓存</h2>
+<p>EXTRACT 负责入库抽取和合并摘要；KEYWORD 负责查询关键词；QUERY 负责最终回答；VLM 负责图片相关分析。未指定独立角色配置时，角色可继承基础模型配置。它们是流水线职责划分，不是四个相互协商的 Agent。</p>
+<p>Embedding 与上述生成模型不同：它输出数值向量，用于相似性检索。维度必须和索引一致，文档编码与查询编码也应采用兼容的向量空间。即使两个模型输出维度相同，也不能直接混用旧向量与新查询向量；应记录模型身份并按迁移策略重建索引。非对称 Embedding 中，query 和 passage 的指令或前缀可能不同。</p>
+<p>配置多模型可以在速度、成本与质量间取舍。例如先用稳定的小模型试验关键词提取，把更强模型留给复杂答案；但是否节约成本必须统计真实调用。抽取质量差导致后续重建，可能抵消便宜模型的单次优势。</p>
+<p>缓存需要区分阶段。抽取缓存帮助重试和图重建；关键词缓存可减少重复问题的解析；回答缓存可复用生成结果。当前查询链路中的回答缓存检查位于检索和重排序之后，因此命中并不意味着跳过全部检索成本。</p>
+<p>本地回答缓存的身份不等同于完整业务有效性：它没有自动表达商家、活动配置快照、全部模型提供商参数与知识库内容版本。若政策或活动发生变化，业务系统必须制定命名空间或失效策略，不能仅用“缓存里有答案”判断可返回。</p>
+<p>缓存存储本身受 workspace 隔离，问题是它不自动表达同一 workspace 内的全部业务变化，并非完全没有隔离。存在 conversation_history 时，当前实现绕过共享答案缓存的读写；真正的流式迭代器结果不会写入该答案缓存。多轮与流式体验的缓存收益应按实际路径测量。</p>
+<h2 id="section-10">9. 存储、并发与一致性</h2>
+<h3>9.1 默认组合与替换能力</h3>
+<p>默认轻量组合围绕 JSON KV、JSON 文档状态、NetworkX 图和 NanoVectorDB 向量展开，适合小规模学习与验证。可替换后端包括 PostgreSQL、Neo4j、MongoDB、Redis、Milvus、Qdrant、Faiss、Memgraph、OpenSearch 等，但每种数据库只实现适合它的接口；不能把一串数据库名称理解为同时必须部署的依赖。</p>
+<p>选择后端时先考虑数据规模、写入方式、备份与团队维护能力，再考虑技术名词的丰富度。仓库契约把五种文件后端限定为小规模测试验证，生产部署应选择服务端存储后端，并验证并发、连接池、超时、索引和备份恢复。源码中的可选适配器不等于本次已对所有数据库做过集成测试。</p>
+<h3>9.2 workspace 做隔离，但不自动完成授权</h3>
+<p>不同后端实现 workspace 的方式不同：文件子目录、集合名前缀、关系表字段过滤、向量 payload 分区等。workspace 是数据组织与隔离机制；“当前登录用户是否有权访问这个 workspace”仍是业务授权问题。</p>
+<p>多商家应用需要由服务端根据身份决定租户范围，不能接受客户端随意提交的 workspace 后直接访问数据。检索、图扩展、原文读取、引用返回、缓存命中与导出都应遵守同一范围。检索完再把不该看的答案删掉，已经太晚，因为不该读取的资料可能已进入模型上下文。</p>
+<h3>9.3 多存储写入没有天然的全局事务</h3>
+<p>图、KV、向量与文档状态分别写入，中途崩溃会留下中间状态。即便统一到一种数据库产品，也要核实应用是否把这些写操作放在同一事务；当前项目的工程契约明确承认跨存储无整体事务。</p>
+<p>代码通过状态记录、顺序约束、锁、来源锚点和重建来处理故障。理解“可靠”应具体到故障窗口：哪个写入已经持久化？哪些记录仍可重试？错误是否向上传播？下一次运行如何恢复？不要笼统称为强一致或 exactly-once。</p>
+<h3>9.4 文件后端不能一概而论</h3>
+<p>NetworkX、NanoVectorDB 和 Faiss 维护进程内副本，需要文件指纹与更新信号配合判断是否重载。图存储与向量存储在冲突处理上并不相同：图合并依赖先前读取的累计状态，不能简单模仿向量后端的重载和重放缓冲。</p>
+<p>JSON KV 与文档状态在多 worker 场景使用共享字典语义，更新标记的含义又不同。这里最有价值的学习点是“不同数据结构需要不同一致性策略”，而不是记住一个通用加锁口诀。<code>docs/design/</code> 中的文件快照、单写者、入库并发和删除恢复契约值得与对应实现一起读。</p>
+<h2 id="section-11">10. API 与 WebUI：框架怎样成为可操作的系统</h2>
+<h3>10.1 服务层做了什么</h3>
+<p>FastAPI 层负责启动时模型配置与生命周期、认证、请求校验、查询、文档操作、图操作、健康检查及静态页面。核心角色配置有更新能力，但不能据此假定存在通用 REST 模型管理接口。查询路由捕获配置好的 LightRAG 实例，再把请求参数转换成核心查询参数。服务端默认端口配置为 9621，但实际部署可覆盖。</p>
+<table>
+<thead>
+<tr>
+<th>接口组</th>
+<th>用途</th>
+<th>业务接入重点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/query</code></td>
+<td>一次性返回答案</td>
+<td>返回体、超时和错误处理</td>
+</tr>
+<tr>
+<td><code>/query/stream</code></td>
+<td>逐步返回答案与引用</td>
+<td>正确解析流式协议和中断</td>
+</tr>
+<tr>
+<td><code>/query/data</code></td>
+<td>返回检索上下文等结构化数据</td>
+<td>评测、证据审查、外层编排</td>
+</tr>
+<tr>
+<td><code>/documents/*</code></td>
+<td>上传、扫描、状态、删除或重试</td>
+<td>上传完成与索引完成分开</td>
+</tr>
+<tr>
+<td>图相关路由</td>
+<td>查看及编辑实体关系</td>
+<td>只对授权人员开放管理操作</td>
+</tr>
+<tr>
+<td><code>/api/*</code> 兼容层</td>
+<td>对接 Ollama 风格客户端</td>
+<td>兼容接口不代表部署了本地模型</td>
+</tr>
+</tbody></table>
+<p>特别注意，<code>/query/stream</code> 使用 <code>application/x-ndjson</code>：每行一个 JSON 对象，开启引用时首行可包含 references，后面是响应片段。它不能被直接描述为 SSE。SSE 通常使用 <code>text/event-stream</code> 和 <code>data:</code> 等帧格式；两者都能流式传输，但客户端解析协议不同。</p>
+<h3>10.2 身份认证与业务权限</h3>
+<p>项目支持 API Key 和账号认证等机制。源码中的统一认证依赖保护查询与管理接口，但并没有因此自动提供按商家、角色、文档级别控制的完整 RBAC。隐藏某个按钮并不阻止用户直接请求接口。</p>
+<p>默认监听地址、认证开关和兼容路由白名单都需要部署者明确检查。官方 README 提醒未配置认证时不要直接暴露服务；Ollama 兼容路径还有白名单配置。这属于实际配置边界，不需要把整个项目泛化成“不安全”，也不能因为有登录页就宣称完成企业权限系统。</p>
+<p>具体默认包括 HOST=0.0.0.0，认证白名单含 <code>/health,/api/*</code>。因此即使为部分服务配置认证，兼容接口仍可能被白名单放行；应根据部署用途显式设置，而不是仅检查是否出现登录页。</p>
+<h3>10.3 前端是什么技术栈，展示什么</h3>
+<p>本地 WebUI 使用 React 19、TypeScript、Vite、Tailwind、Zustand 和 i18next；图可视化使用 Sigma／Graphology 相关库。界面围绕文档处理、知识图谱探索、检索问答与设置展开。图的可视化主要帮助观察与调试，节点多、连线密不等于检索效果好。</p>
+<p>WebUI 的 <code>/workspace</code> 是页面入口概念，不应与“一个登录用户可以切换并隔离多个商家知识库”的业务能力混为一谈。核心路由使用的是服务端绑定的 LightRAG 实例。若二次开发成运营产品，建议另做面向任务的页面：活动选择、诊断结果、证据和缺失字段；保留上游界面作为管理与调试入口。</p>
+<h2 id="section-12">11. 配置、部署与运维如何理解</h2>
+<p><code>pyproject.toml</code> 声明 Python &gt;= 3.10，包名为 <code>lightrag-hku</code>；API、数据库、模型、评测和可观测性依赖通过 extras 分组。锁文件用于约束依赖版本。示例命令不意味着任意最新依赖组合都经过验证，复现时应记录 Python、锁文件、模型、后端和配置版本。</p>
+<p><code>.env</code>、<code>env.example</code> 和交互式环境向导负责模型、存储、解析、认证等配置。Compose 和 Kubernetes 材料用于部署组合。某些 Compose 文件由向导生成，应修改输入配置而不是把生成物当作唯一真相。开发环境和容器内服务地址也不同，不能把只在容器网络里可解析的主机名直接拿给宿主使用。</p>
+<p>扩容有一个重要前提：同一 workspace 仅一个入库实例，共享状态不自动跨 pod。增加查询实例需要外部数据库、按要求初始化并保持单一写入入口；版本升级也需协调入库暂停。不能仅增加 Kubernetes replicas 就宣称支持并行入库和分布式一致性。</p>
+<p>建议按以下顺序建立可复现环境：</p>
+<ol>
+<li>固定当前提交，保存配置模板与依赖锁；不把密钥放进 Git。</li>
+<li>先以少量纯文本、一个可用生成模型和兼容 Embedding 跑通 SDK 主路径。</li>
+<li>验证文档状态、索引数量、检索原文和答案，而不只看首页能否打开。</li>
+<li>再启动 API 与 WebUI，检查流式协议、认证和失败提示。</li>
+<li>接入业务文档、reranker 与正式数据库后，重新建立质量和延迟基线。</li>
+</ol>
+<p>Langfuse 等可观测性集成可以帮助追踪调用。业务系统至少应记录 request_id、检索模式、知识库版本、召回条目、最终上下文、模型标识、token、耗时和错误。记录时要控制敏感内容，尤其不能为了排查方便把密钥或不必要的订单个人信息写进日志。</p>
+<p>成本应分阶段统计。一次查询成本近似为关键词模型、问题 Embedding、重排序和回答模型成本之和；索引成本还包括解析、分块向量化、实体关系抽取及合并摘要。缓存、批处理和并发会影响延迟与费用，但并发提高不保证吞吐无限增加，外部模型可能有速率限制。</p>
+<h2 id="section-13">12. 测试与评测：如何避免“看起来回答不错”</h2>
+<h3>12.1 三类验证不能混为一谈</h3>
+<p>工程测试检查接口、状态和边界行为，例如解析失败、文档删除、缓存、并发锁、后端适配、前端组件。离线测试通常使用 mock，真实数据库和模型集成测试需要相应服务。测试存在不等于当前环境全部通过。</p>
+<p>RAG 质量评估检查证据召回和答案质量；论文复现则要遵循其数据、问题和比较方法。仓库提供了 RAGAS 相关脚本、样例问题和论文复现材料。文档里的参考阈值不应直接变成你的业务验收标准；RAGAS 也并非每一个指标都不需要参考答案。</p>
+<h3>12.2 本次实际做了哪些检查</h3>
+<p>本次对核心包 177 个 Python 文件进行了 AST 语法解析，未发现解析错误。这只说明这些文件可以被当前解析器理解，不说明依赖可导入、服务可启动或逻辑正确。</p>
+<p>此外运行了上游 <code>offline_retrieval_check.py --strict</code>：6 个自带样例问题在 top-2 下全部召回预期文档，平均 recall@2 和 MRR 都为 1.000。该脚本使用词法评分检查小型英文样例资料，未运行 LightRAG 的向量检索、图谱、Embedding、LLM 或 RAGAS。这个结果只能证明样例资料与问题的词法匹配检查通过，不能作为 LightRAG 或电商项目“准确率 100%”的证据。</p>
+<p>未运行完整 pytest、前端 Bun 测试、类型检查、构建、外部数据库集成或线上模型评测；未修改本地源码。生成报告前再次检查工作区状态，以确认阅读与样例检查没有造成代码变更。</p>
+<h3>12.3 推荐的业务评测结构</h3>
+<table>
+<thead>
+<tr>
+<th>层次</th>
+<th>指标示例</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>解析与抽取</td>
+<td>表格字段保留率、实体链接错误率</td>
+<td>先验证资料有没有被正确理解</td>
+</tr>
+<tr>
+<td>检索</td>
+<td>evidence recall@k、MRR、完整证据集命中率</td>
+<td>是否找到回答问题需要的材料</td>
+</tr>
+<tr>
+<td>生成</td>
+<td>结论正确率、关键条件覆盖率、引用支持率</td>
+<td>答案是否由证据支持</td>
+</tr>
+<tr>
+<td>业务</td>
+<td>拒答／追问正确率、诊断原因正确率</td>
+<td>信息不足时是否保持合理行为</td>
+</tr>
+<tr>
+<td>工程</td>
+<td>p50/p95 延迟、索引耗时、单次费用</td>
+<td>质量收益是否有可接受代价</td>
+</tr>
+</tbody></table>
+<p>对比实验至少固定文档版本、切分、Embedding、生成模型、提示模板、输出预算与问题集。先比较 naive、hybrid、mix，再单独开关 rerank；若同时换模型、加数据、改提示词，就难以知道收益来自哪里。还应报告图检索不占优的场景，例如单点事实查询、精确 SKU 检索或资料量很小的任务。</p>
+<p>论文复现目录使用大范围问题和模型比较答案的评价方式；这类偏好或胜率不等于电商规则正确率。面向真实业务，最好人工核对关键判断与证据，用自动评分辅助扩大覆盖，并抽查评分者偏差。</p>
+<h2 id="section-14">13. 常见失败如何定位</h2>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>先检查什么</th>
+<th>下一步</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>上传完成却查不到</td>
+<td>文档状态是否 processed、是否选错 workspace</td>
+<td>查看失败原因和索引状态</td>
+</tr>
+<tr>
+<td>找到的资料不相关</td>
+<td>问题是否明确、关键词与向量模型是否匹配</td>
+<td>查看最终检索材料；原始候选需额外埋点</td>
+</tr>
+<tr>
+<td>漏掉例外条款</td>
+<td>分块是否切断标题和条件</td>
+<td>调整分块并重建受影响文档</td>
+</tr>
+<tr>
+<td>引用正确但结论错误</td>
+<td>生成是否忽略否定、时间或适用范围</td>
+<td>增加结构化判定与结论核查</td>
+</tr>
+<tr>
+<td>图谱混入其他产品</td>
+<td>实体同名、别名和版本策略</td>
+<td>建立规范 ID 与隔离范围</td>
+</tr>
+<tr>
+<td>更新后仍答旧内容</td>
+<td>索引是否完成、缓存是否失效</td>
+<td>绑定知识快照并做回归检查</td>
+</tr>
+<tr>
+<td>查询延迟高</td>
+<td>分阶段耗时、召回量、rerank 与模型调用</td>
+<td>减少无效候选并选取合理模式</td>
+</tr>
+<tr>
+<td>删除后部分描述仍旧</td>
+<td>来源锚点、抽取缓存、重建策略与报告</td>
+<td>检查降级记录，必要时重建</td>
+</tr>
+</tbody></table>
+<p>排查顺序应沿数据流推进：原文正确吗？解析正确吗？分块完整吗？抽取合理吗？召回正确吗？最终上下文包含证据吗？生成遵守证据吗？从“模型不够强”开始猜测，往往会错过真正问题。</p>
+<h2 id="section-15">14. 与 RepoPilot-R 的关系及学习路线</h2>
+<p>RepoPilot-R 重点是工具执行、任务状态、恢复和验收；LightRAG 重点是知识组织、检索、证据和生成。组合在简历中能形成两条独立故事。可以复用你在日志、接口、错误处理方面的经验，但没有必要把两个项目强行拼成一个复杂平台。</p>
+<p>推荐按任务阅读源码：先从 SDK 示例和 QueryParam 跑通概念；再看 public query 分发与 operate.py 查询；随后回读 pipeline 和抽取；最后研究后端生命周期、删除恢复与 API。每读一段，都写出输入、输出、依赖、失败行为和可验证的假设。</p>
+<p>建议做四个学习实验，均属于后续工作：只用 naive 建基线；对同一问题切换图检索模式；删除一份共享来源文档观察图与引用；对一个版本冲突问题查看缓存和知识库切换行为。实验日志比只保存成功截图更适合面试复盘。</p>
+<h2 id="section-16">15. 能力边界与结论</h2>
+<p>这份代码提供了功能较完整的知识索引和检索服务基础，尤其值得学习的是双层检索、来源追踪、可替换存储及复杂更新的工程处理。它不会自动解决每个业务的实体消歧、版本适用性、金额计算、权限隔离、答案核验或生产容量问题。</p>
+<p>真正读懂项目的标志是能够回答：为何需要这条检索路径，哪些数据是原文、哪些是模型加工结果，出错后在哪里发现，以及性能结论如何被复现。后续电商应用应围绕这些边界增加明确的业务逻辑，而不是只改页面标题和提示词。</p>
+<h2 id="section-17">16. 固定版本源码索引与核验记录</h2>
+<p>以下链接固定到本地提交。行号是阅读入口，需结合相邻分支理解；不是声明每个文件都已逐行审计。正文第 6 章主要对应 S04-S16，第 7-8 章对应 S17-S26，第 9-12 章对应 S27-S38。</p>
+<table>
+<thead>
+<tr>
+<th>索引</th>
+<th>主题</th>
+<th>固定版本源码入口</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>S01</td>
+<td>版本定义</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/_version.py#L3">lightrag/_version.py:3</a></td>
+</tr>
+<tr>
+<td>S02</td>
+<td>参数与模式</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/base.py#L90">lightrag/base.py:90</a></td>
+</tr>
+<tr>
+<td>S03</td>
+<td>实际查询默认值</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/constants.py#L57">lightrag/constants.py:57</a></td>
+</tr>
+<tr>
+<td>S04</td>
+<td>核心 SDK 入库</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/lightrag.py#L2363">lightrag/lightrag.py:2363</a></td>
+</tr>
+<tr>
+<td>S05</td>
+<td>入队与文档身份</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/pipeline.py#L1043">lightrag/pipeline.py:1043</a></td>
+</tr>
+<tr>
+<td>S06</td>
+<td>解析路由</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/parser/routing.py#L1420">lightrag/parser/routing.py:1420</a></td>
+</tr>
+<tr>
+<td>S07</td>
+<td>固定 token 分块</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/chunker/token_size.py#L133">lightrag/chunker/token_size.py:133</a></td>
+</tr>
+<tr>
+<td>S08</td>
+<td>段落分块</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/chunker/paragraph_semantic.py#L15">lightrag/chunker/paragraph_semantic.py:15</a></td>
+</tr>
+<tr>
+<td>S09</td>
+<td>抽取提示格式</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/prompt.py#L56">lightrag/prompt.py:56</a></td>
+</tr>
+<tr>
+<td>S10</td>
+<td>抽取与补抽</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L4215">lightrag/operate.py:4215</a></td>
+</tr>
+<tr>
+<td>S11</td>
+<td>实体合并与来源限制</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L2429">lightrag/operate.py:2429</a></td>
+</tr>
+<tr>
+<td>S12</td>
+<td>关系合并</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L2782">lightrag/operate.py:2782</a></td>
+</tr>
+<tr>
+<td>S13</td>
+<td>写前恢复索引</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L3666">lightrag/operate.py:3666</a></td>
+</tr>
+<tr>
+<td>S14</td>
+<td>文档处理与提交</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/pipeline.py#L4991">lightrag/pipeline.py:4991</a></td>
+</tr>
+<tr>
+<td>S15</td>
+<td>删除与清理</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/lightrag.py#L6015">lightrag/lightrag.py:6015</a></td>
+</tr>
+<tr>
+<td>S16</td>
+<td>图重建与降级</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L1170">lightrag/operate.py:1170</a></td>
+</tr>
+<tr>
+<td>S17</td>
+<td>结构化查询接口</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/lightrag.py#L5021">lightrag/lightrag.py:5021</a></td>
+</tr>
+<tr>
+<td>S18</td>
+<td>六模式路由</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/lightrag.py#L5114">lightrag/lightrag.py:5114</a></td>
+</tr>
+<tr>
+<td>S19</td>
+<td>local 实体召回</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L6211">lightrag/operate.py:6211</a></td>
+</tr>
+<tr>
+<td>S20</td>
+<td>global 关系召回</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L6529">lightrag/operate.py:6529</a></td>
+</tr>
+<tr>
+<td>S21</td>
+<td>图候选轮询融合</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L5432">lightrag/operate.py:5432</a></td>
+</tr>
+<tr>
+<td>S22</td>
+<td>chunk 轮询融合</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L5811">lightrag/operate.py:5811</a></td>
+</tr>
+<tr>
+<td>S23</td>
+<td>图候选向量排序</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/utils.py#L6757">lightrag/utils.py:6757</a></td>
+</tr>
+<tr>
+<td>S24</td>
+<td>重排与预算</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/utils.py#L7055">lightrag/utils.py:7055</a></td>
+</tr>
+<tr>
+<td>S25</td>
+<td>引用编号</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/utils.py#L7735">lightrag/utils.py:7735</a></td>
+</tr>
+<tr>
+<td>S26</td>
+<td>回答缓存条件</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/operate.py#L4662">lightrag/operate.py:4662</a></td>
+</tr>
+<tr>
+<td>S27</td>
+<td>默认存储组装</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/lightrag.py#L696">lightrag/lightrag.py:696</a></td>
+</tr>
+<tr>
+<td>S28</td>
+<td>后端注册表</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/kg/__init__.py#L1">lightrag/kg/<strong>init</strong>.py:1</a></td>
+</tr>
+<tr>
+<td>S29</td>
+<td>模型角色</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/llm_roles.py#L1">lightrag/llm_roles.py:1</a></td>
+</tr>
+<tr>
+<td>S30</td>
+<td>NDJSON 查询接口</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/api/routers/query_routes.py#L988">lightrag/api/routers/query_routes.py:988</a></td>
+</tr>
+<tr>
+<td>S31</td>
+<td>认证白名单配置</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/api/config.py#L848">lightrag/api/config.py:848</a></td>
+</tr>
+<tr>
+<td>S32</td>
+<td>服务绑定实例</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/api/lightrag_server.py#L2513">lightrag/api/lightrag_server.py:2513</a></td>
+</tr>
+<tr>
+<td>S33</td>
+<td>前端依赖与脚本</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag_webui/package.json#L1">lightrag_webui/package.json:1</a></td>
+</tr>
+<tr>
+<td>S34</td>
+<td>多实例部署边界</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/k8s-deploy/lightrag/values.yaml#L1">k8s-deploy/lightrag/values.yaml:1</a></td>
+</tr>
+<tr>
+<td>S35</td>
+<td>离线样例词法检查</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/lightrag/evaluation/offline_retrieval_check.py#L1">lightrag/evaluation/offline_retrieval_check.py:1</a></td>
+</tr>
+<tr>
+<td>S36</td>
+<td>论文复现评价口径</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/docs/Reproduce.md#L1">docs/Reproduce.md:1</a></td>
+</tr>
+<tr>
+<td>S37</td>
+<td>离线 CI</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/.github/workflows/tests.yml#L33">.github/workflows/tests.yml:33</a></td>
+</tr>
+<tr>
+<td>S38</td>
+<td>PostgreSQL smoke 范围</td>
+<td><a href="https://github.com/HKUDS/LightRAG/blob/453dce83d6d0354a06e46c8d4029a0895c4e054b/.github/workflows/pg-smoke.yml#L61">.github/workflows/pg-smoke.yml:61</a></td>
+</tr>
+</tbody></table>
+<p>配套包中的 source_index.csv 保存可检索索引，source_inventory.csv 保存完整已跟踪文本文件盘点。Git 工作区身份、AST 检查和离线样例检查结果另存 verification.json。它们用于复核本报告的范围与实际检查，不代表完整测试或线上性能。</p>
+<h2 id="section-18">17. 检索进阶：面试追问时值得理解的细节</h2>
+<p>local 中实体保持向量命中顺序，图节点 degree 并不自动使实体重新排序；邻接关系按 <code>(rank, weight)</code> 元组降序，即先比 rank、相同再比 weight，不是两者算术相加。global 则保持关系向量命中顺序，再按关系端点出现顺序组织实体。这说明排序策略应分层解释。</p>
+<p>图来源块的默认 VECTOR 选择方式，会在图限定的候选块内比较原问题向量；它不同于 mix 的全库 chunk 直接召回。相关块数量参数默认 5 也不等于每个实体固定拿 5 块：VECTOR 配额与去重后组数有关，WEIGHT 则按组的顺序递减分配。若做检索优化，应记录分支、候选、配额与降级原因。</p>
+<p>最终上下文预算先限制实体和关系，再给原文分配剩余空间。截断倾向保留前部完整记录，不是遇到长记录就自动跳过去选短记录。历史消息、输出额度和协议开销还需要调用方管理。预览接口返回处理后的最终材料；想比较所有初始候选，必须增加观测点。</p>
+<p>reference_id 是本次查询临时编号，同一 file_path 的块共享编号；它不能当稳定文档主键。业务系统应使用自己的版本化来源 ID，并把原文 URL、chunk_id 和规则条款关联起来。</p>
+<p>关键词两组都提取失败时，源码有短问题回退和长问题直接返回失败的分支。因此 mix 不保证在任何关键词失败下都能靠 chunk 向量补救。此类失败应进入业务评测，而不能只用正常问题验证。</p>
+<p>本次还发现值得后续复现的静态风险：非流式长回答有基于长度触发的提示词／字符串清理分支，naive 路径还会切去一段前缀。静态阅读无法证明实际输入一定触发问题；建议在短自定义系统提示词和长答案下补回归测试。此观察没有被当作已复现故障，也未在本次修改源码。入口为 operate.py 的 4954 与 7109 行。</p>
+<footer>本地代码基线：453dce83d · 编写日期：2026-10-03 · 请区分已核验的上游能力与拟议业务设计。</footer></main></div></body></html>
